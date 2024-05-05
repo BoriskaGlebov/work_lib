@@ -40,6 +40,7 @@ class DiskInfo(peewee.Model):
     manufactured_id = peewee.TextField()
     model_name = peewee.TextField()
     total_size = peewee.TextField()
+    int_size = peewee.IntegerField()
     serial_number = peewee.TextField()
 
     class Meta:
