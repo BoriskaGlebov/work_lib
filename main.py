@@ -1,5 +1,7 @@
 import string
 import random
+import time
+
 import Levenshtein
 
 
@@ -20,7 +22,7 @@ letters = string.ascii_uppercase + string.digits
 serial_numbers = []
 # генерирую диски db
 with open('from_db.txt', 'w') as file:
-    while len(serial_numbers) < 400:
+    while len(serial_numbers) < 1000:
         some_num = ''
         for _ in range(10):
             some_num += random.choice(letters)
@@ -32,14 +34,18 @@ with open('from_db.txt', 'w') as file:
 with open('from_exel.txt', 'w') as file:
     for serial_num in serial_numbers:
         new_str = serial_num
-        if random.randint(1, 3) == 1:
+        # добавляю опечатки
+        if random.randint(1, 100) == 1:
             new_str = serial_num.replace('O', '0')
             new_str = new_str.replace('G', '6')
-        if random.randint(1, 2) == 1:
+        # добавляю другие символы, так сказать различие на один символ
+        if random.randint(1, 6) == 1:
             new_str = new_str.replace(serial_num[random.randint(0, len(new_str) - 1)], random.choice(letters))
         file.write(new_str + '\n')
 
 # вот после подготовительных мероприятий приступаю собственно к сравнению
+print('я создаль')
+start = time.time()
 with open('from_db.txt', 'r') as file1, open('from_exel.txt', 'r') as file2:
     from_db = file1.readlines()
     from_exel = file2.readlines()
@@ -54,10 +60,13 @@ with open('from_db.txt', 'r') as file1, open('from_exel.txt', 'r') as file2:
                 # Так же если данные из exel это тоже список,
                 # то я бы удалял из него все что находим,
                 # тем самым думаю немного будет ускоряться поиск
+                from_exel.remove(hdd_exel)
                 break
             else:
                 continue
         else:
             out.append(hdd)
+    stop= time.time()
     print(len(out))
     print(out)
+    print(f'time = {stop-start}')
