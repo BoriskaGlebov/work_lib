@@ -17,7 +17,7 @@ class ModelBase(peewee.Model):
         database = db
 
 
-class Hosts(peewee.Model):
+class Hosts(ModelBase):
     """Таблица с информацией о хостах"""
     created_at = peewee.DateTimeField(default=datetime.now().
                                       strftime('%Y-%m-%d %X'))
@@ -26,25 +26,28 @@ class Hosts(peewee.Model):
     host_name = peewee.TextField(null=False)
     name_os = peewee.TextField(null=False)
 
-    class Meta:
-        database = db
-        # table_name = 'her' #можно переопределить название таблицы
+    # class Meta:
+    #     database = db
+    # table_name = 'her' #можно переопределить название таблицы
 
 
-class DiskInfo(peewee.Model):
+class DiskInfo(ModelBase):
     """Таблица с информацией о дисках"""
     created_at = peewee.DateTimeField(default=datetime.now().strftime('%Y-%m-%d %X'))
     updated_at = peewee.DateTimeField(default=datetime.now().
                                       strftime('%Y-%m-%d %X'))
-    host = peewee.ForeignKeyField(Hosts, backref='query')
+    # host = peewee.ForeignKeyField(Hosts, backref='query')
+    host = peewee.TextField(primary_key=True)
     manufactured_id = peewee.TextField()
     model_name = peewee.TextField()
     total_size = peewee.TextField()
     int_size = peewee.IntegerField()
     serial_number = peewee.TextField()
 
-    class Meta:
-        database = db
+    def to_json(self):
+        return {field:getattr(self,field) for field in self._meta.columns}
+    # class Meta:
+    #     database = db
 
 
 db.connect()
