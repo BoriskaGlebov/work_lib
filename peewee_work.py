@@ -1,3 +1,5 @@
+import time
+
 from database.models.models import db, DiskInfo
 
 if __name__ == '__main__':
@@ -12,9 +14,17 @@ if __name__ == '__main__':
          }
     disk_list = [{k: (v if k != 'host' else v + str(i))
                   for k, v in d.items()}
-                 for i in range(40000)]
+                 for i in range(100000)]
     # print(disk_list)
     ins_inf=[DiskInfo(**el) for el in disk_list]
     print(len(ins_inf))
-    with db.atomic():
-        DiskInfo.bulk_create(ins_inf)
+    strat=time.time()
+    # ds=DiskInfo.create()
+    # print(type(ds))
+    # for el in disk_list:
+    for el in range(0,len(disk_list),10000):
+        DiskInfo.insert_many(disk_list[el:el+10000]).execute()
+    # with db.atomic():
+    #     DiskInfo.bulk_create(ins_inf,batch_size=30000)
+        # DiskInfo.bulk_create(ins_inf)
+    print(f'work for {time.time()-strat=}')
