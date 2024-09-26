@@ -6,3 +6,5 @@ python-dotenv==1.0.1
 rapidfuzz==3.9.7
 setuptools==75.1.0
 wheel==0.44.0
+
+progress~=1.6
