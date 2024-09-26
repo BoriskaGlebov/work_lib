@@ -10,8 +10,8 @@ my_json_dumps = functools.partial(json.dumps, ensure_ascii=False)
 
 class ModelBase(peewee.Model):
     """Модель базы данных"""
-    created_at = peewee.DateTimeField(default=datetime.now().
-                                      strftime('%Y-%m-%d %X'))
+    # created_at = peewee.DateTimeField(default=datetime.now().
+    #                                   strftime('%Y-%m-%d %X'))
 
     class Meta:
         database = db
