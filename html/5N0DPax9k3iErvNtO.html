@@ -1,0 +1,229 @@
+<html><head><base href="https://photorealistic-server-rack.com/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Photorealistic Server Rack</title><style>
+    body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f0f0f0;
+        font-family: Arial, sans-serif;
+        perspective: 1000px;
+        overflow: hidden;
+    }
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+    }
+    .rack {
+        width: 500px;
+        height: 80vh;
+        background: url('https://i.imgur.com/9Xj4UZv.jpg') no-repeat center center;
+        background-size: cover;
+        border: 10px solid #1a1a1a;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        padding: 5px;
+        box-shadow: 0 0 25px rgba(0,0,0,0.5);
+    }
+    .server {
+        width: 96%;
+        height: 8vh;
+        margin: 1px 2%;
+        cursor: pointer;
+        transition: all 0.5s ease;
+        position: relative;
+        display: flex;
+        align-items: center;
+        padding: 0 5px;
+        box-sizing: border-box;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        border: 1px solid #333;
+        border-radius: 3px;
+    }
+    .server.selected {
+        transform: translateX(25px);
+        box-shadow: -5px 0 10px rgba(0,0,0,0.3);
+    }
+    .server-label {
+        color: #fff;
+        font-size: 14px;
+        text-shadow: 1px 1px 1px rgba(0,0,0,0.8);
+        background-color: rgba(0,0,0,0.5);
+        padding: 2px 5px;
+        border-radius: 3px;
+    }
+    .server-info {
+        position: absolute;
+        left: 105%;
+        top: 0;
+        width: 50vw;
+        max-width: 600px;
+        background-color: rgba(255,255,255,0.95);
+        border-radius: 5px;
+        padding: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        opacity: 0;
+        transition: all 0.5s ease;
+        pointer-events: none;
+        font-size: 12px;
+    }
+    .server.selected .server-info {
+        opacity: 1;
+        pointer-events: all;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 4px;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+    }
+    .editable {
+        cursor: text;
+        padding: 1px 3px;
+        border-radius: 2px;
+        transition: background-color 0.3s;
+    }
+    .editable:hover {
+        background-color: #f0f0f0;
+    }
+    .editable:focus {
+        background-color: #fff;
+        outline: none;
+        box-shadow: 0 0 0 1px #007bff;
+    }
+</style></head><body>
+    <div class="container">
+        <div class="rack" id="rack">
+            <!-- 10 2U servers will be generated here -->
+        </div>
+    </div>
+
+<script>
+const serverNames = [
+    "Web Server", "Database Server", "Application Server", "File Server",
+    "Mail Server", "Backup Server", "Proxy Server", "DNS Server",
+    "Load Balancer", "Monitoring Server"
+];
+
+const serverImages = [
+    'https://i.imgur.com/7ZDqfGu.jpg',
+    'https://i.imgur.com/WZZoZC0.jpg',
+    'https://i.imgur.com/JCufZktl.jpg',
+    'https://i.imgur.com/3S7HZQe.jpg',
+    'https://i.imgur.com/eGLmzTm.jpg',
+    'https://i.imgur.com/3wQK5sU.jpg',
+    'https://i.imgur.com/SLgZURol.jpg',
+    'https://i.imgur.com/E8oQP7l.jpg',
+    'https://i.imgur.com/njsLKfk.jpg',
+    'https://i.imgur.com/ygTDjtE.jpg'
+];
+
+const diskModels = [
+    "WD Red", "Seagate IronWolf", "HGST Ultrastar", "Samsung 870 EVO",
+    "Crucial MX500", "Intel Optane", "Toshiba N300", "Hitachi Deskstar"
+];
+
+const manufacturers = [
+    "Western Digital", "Seagate", "HGST", "Samsung", "Crucial", "Intel", "Toshiba", "Hitachi"
+];
+
+function generateRandomSerial() {
+    return Math.random().toString(36).substring(2, 15).toUpperCase();
+}
+
+function createServerInfo() {
+    const disks = [];
+    for (let i = 0; i < 4; i++) {
+        const model = diskModels[Math.floor(Math.random() * diskModels.length)];
+        const manufacturer = manufacturers[Math.floor(Math.random() * manufacturers.length)];
+        disks.push({
+            id: i + 1,
+            model: model,
+            manufacturer: manufacturer,
+            capacity: Math.pow(2, Math.floor(Math.random() * 3) + 10) + " TB", // 1, 2, or 4 TB
+            serial: generateRandomSerial(),
+            comment: "Healthy"
+        });
+    }
+    return disks;
+}
+
+const rack = document.getElementById('rack');
+
+for (let i = 0; i < 10; i++) {
+    const server = document.createElement('div');
+    server.className = 'server';
+    server.style.backgroundImage = `url(${serverImages[i]})`;
+    server.innerHTML = `
+        <span class="server-label">${serverNames[i]}</span>
+        <div class="server-info">
+            <h3>${serverNames[i]} - Disk Information</h3>
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Model</th>
+                    <th>Manufacturer</th>
+                    <th>Capacity</th>
+                    <th>Serial Number</th>
+                    <th>Comment</th>
+                </tr>
+                ${createServerInfo().map(disk => `
+                    <tr>
+                        <td>${disk.id}</td>
+                        <td>${disk.model}</td>
+                        <td>${disk.manufacturer}</td>
+                        <td>${disk.capacity}</td>
+                        <td>${disk.serial}</td>
+                        <td><div class="editable" contenteditable="true">${disk.comment}</div></td>
+                    </tr>
+                `).join('')}
+            </table>
+        </div>
+    `;
+    rack.appendChild(server);
+
+    server.addEventListener('click', function() {
+        const currentlySelected = document.querySelector('.server.selected');
+        if (currentlySelected && currentlySelected !== this) {
+            currentlySelected.classList.remove('selected');
+        }
+        this.classList.toggle('selected');
+    });
+}
+
+// Close server info when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.server')) {
+        const selectedServers = document.querySelectorAll('.server.selected');
+        selectedServers.forEach(server => server.classList.remove('selected'));
+    }
+});
+
+// Prevent server deselection when clicking inside server info
+document.addEventListener('click', function(event) {
+    if (event.target.closest('.server-info')) {
+        event.stopPropagation();
+    }
+});
+
+// Make comments editable
+document.querySelectorAll('.editable').forEach(editable => {
+    editable.addEventListener('blur', function() {
+        // Here you can add code to save the edited comment
+        console.log('Comment updated:', this.textContent);
+    });
+});
+</script></body></html>
