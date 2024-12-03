@@ -18,6 +18,8 @@ def replace(replace_str: str):
     return replace_str
 
 
+
+
 letters = string.ascii_uppercase + string.digits
 # print(letters)
 serial_numbers = []
