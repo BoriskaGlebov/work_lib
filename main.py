@@ -17,7 +17,7 @@ def replace(replace_str: str):
     replace_str = replace_str.replace('G', '6')
     return replace_str
 
-
+df
 
 
 letters = string.ascii_uppercase + string.digits
