@@ -5,6 +5,7 @@ import time
 import Levenshtein
 
 
+
 def replace(replace_str: str):
     """
     Функция заменяет возможные опечатки на моменте сравнения,
