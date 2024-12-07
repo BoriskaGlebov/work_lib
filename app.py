@@ -1,15 +1,21 @@
+import os
 from datetime import datetime
 
-from flask import Flask, request, redirect, url_for, render_template, jsonify
+from flasgger import Swagger
+from flask import Flask, request, redirect, url_for, render_template, jsonify, flash
 
+from forms import LoginForm, RegistrationForm
 from models import db, User, Transaction
 from config import Config
 from commands import admin_commands
 
 app = Flask(__name__)
 app.config.from_object(Config)
-
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # Замените на ваш собственный секретный ключ
+# Инициализация Swagger.
+swagger = Swagger(app,template_file='swagger.yml')
 db.init_app(app)
+
 
 with app.app_context():
     db.drop_all()
@@ -26,6 +32,55 @@ with app.app_context():
     db.session.commit()
 
 app.cli.add_command(admin_commands)
+
+
+@app.cli.command('create-admin')
+def create_admin():
+    """Создает дефолтного администратора."""
+    admin_user = User(username='admin', email='admin@example.com')
+    admin_user.set_password('admin123')
+
+    db.session.add(admin_user)
+    db.session.commit()
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """Регистрация нового пользователя."""
+
+    form = RegistrationForm()
+
+    if form.validate_on_submit():
+        new_user = User(username=form.username.data,
+                        email=form.email.data,
+                        balance=form.balance.data)
+        new_user.set_password(form.password.data)
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash('Регистрация прошла успешно!', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('register.html', form=form)
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Вход пользователя."""
+
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+
+        if user and user.check_password(form.password.data):
+            flash('Вы успешно вошли!', 'success')
+            return redirect(url_for('dashboard'))
+
+        flash('Неверный логин или пароль.', 'danger')
+
+    return render_template('login.html', form=form)
 
 
 @app.route('/')

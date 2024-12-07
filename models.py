@@ -14,7 +14,8 @@ class User(db.Model):
     email = db.Column(db.String(254), nullable=False, unique=True)
     password_hash = db.Column(db.String(128), nullable=False)  # Хэш пароля
     balance = db.Column(db.Float, nullable=False, default=0.0)
-    commission_rate = db.Column(db.Float, nullable=False, default=0.0)
+    commission_rate = db.Column(db.Float, nullable=False, default=0.05)
+    role = db.Column(db.String(20), default='user')  # Add this line
     webhook_url = db.Column(db.String(255), nullable=True)
 
     def set_password(self, password):

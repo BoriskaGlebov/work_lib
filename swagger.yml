@@ -1,0 +1,144 @@
+swagger: "2.0"
+info:
+  description: "API для управления пользователями и транзакциями."
+  version: "1.0.0"
+  title: "User and Transaction Management API"
+host: "localhost:5000"
+basePath: "/"
+schemes:
+  - "http"
+paths:
+  /register:
+    post:
+      summary: "Регистрация нового пользователя."
+      parameters:
+        - name: "username"
+          in: "formData"
+          required: true
+          type: "string"
+        - name: "email"
+          in: "formData"
+          required: true
+          type: "string"
+        - name: "password"
+          in: "formData"
+          required: true
+          type: "string"
+        - name: "balance"
+          in: "formData"
+          required: false
+          type: "number"
+      responses:
+        201:
+          description: "Пользователь успешно зарегистрирован."
+        400:
+          description: "Ошибка валидации данных."
+
+  /login:
+    post:
+      summary: "Вход пользователя."
+      parameters:
+        - name: "username"
+          in: "formData"
+          required: true
+          type: "string"
+        - name: "password"
+          in: "formData"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "Успешный вход."
+        401:
+          description: "Неверный логин или пароль."
+
+  /create_transaction:
+    post:
+      summary: "Создание новой транзакции."
+      parameters:
+        - name: amount
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              amount:
+                type: number
+              user_id:
+                type: integer
+      responses:
+        201:
+          description: "Транзакция успешно создана."
+        400:
+          description: "'amount' обязательно для заполнения."
+
+  /cancel_transaction:
+    post:
+      summary: "Отмена транзакции по ID."
+      parameters:
+        - name: id
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+      responses:
+        200:
+          description: "Транзакция отменена."
+        404:
+          description: "Транзакция не найдена."
+        400:
+          description: "Невозможно отменить транзакцию с текущим статусом."
+
+  /check_transaction/{transaction_id}:
+    get:
+      summary: "Проверка статуса транзакции по ID."
+      parameters:
+        - name: transaction_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Детали транзакции."
+        404:
+          description: "Транзакция не найдена."
+
+  /users:
+    get:
+      summary: "Получить список всех пользователей."
+      responses:
+        200:
+          description: "Список пользователей."
+
+  /transactions:
+    get:
+      summary: "Получить список всех транзакций."
+      responses:
+        200:
+          description: "Список транзакций."
+
+definitions:
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+      username:
+        type: string
+      email:
+        type: string
+
+  Transaction:
+    type: object
+    properties:
+      id:
+        type: integer
+      amount:
+        type: number
+      commission:
+        type: number
+      status:
+        type: string
