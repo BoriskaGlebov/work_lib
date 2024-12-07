@@ -3,9 +3,10 @@ import click
 from datetime import datetime
 from flask_login import login_required, current_user
 from flasgger import Swagger
-from flask import Flask, request, redirect, url_for, render_template, jsonify, flash
+from flask import Flask, request, redirect, url_for, render_template, jsonify, flash, Response
 # from sqlalchemy.sql.functions import current_user
 from flask_login import LoginManager
+from flask_cors import CORS
 
 from forms import LoginForm, RegistrationForm
 from models import db, User, Transaction
@@ -14,21 +15,13 @@ from config import Config
 # from commands import admin_commands
 
 app = Flask(__name__)
+
 app.config.from_object(Config)
+CORS(app)  # Enable CORS for all routes
 # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # Замените на ваш собственный секретный ключ
 # Инициализация Swagger.
 swagger = Swagger(app, template_file='swagger.yml')
 db.init_app(app)
-
-# # Initialize LoginManager
-# login_manager = LoginManager()
-# login_manager.init_app(app)
-# login_manager.login_view = 'login'  # Set the login view
-#
-# @login_manager.user_loader
-# def load_user(user_id):
-#     return User.query.get(int(user_id))  # Adjust according to your user retrieval logic
-
 
 with app.app_context():
     db.drop_all()
@@ -56,7 +49,7 @@ def create_user(admin):
 
 
 @app.route('/')
-def dashboard():
+def dashboard()->str:
     """Дашборд."""
     total_users = User.query.count()
     total_transactions = Transaction.query.count()
@@ -77,8 +70,8 @@ def users():
     """Страница пользователей."""
     if request.method == 'POST':
         username = request.form['username']
-        balance = request.form['balance']
-        commission_rate = request.form['commission_rate']
+        balance = request.form.get('balance')
+        commission_rate = request.form.get('commission_rate')
         new_user = User(username=username)
         if balance:
             new_user.balance = balance
@@ -103,12 +96,12 @@ def transaction_detail(transaction_id):
     """Детальный просмотр транзакции."""
     transaction = Transaction.query.get_or_404(transaction_id)
 
-    if request.method == 'POST':
-        status = request.form['status']
-        if status in ['confirmed', 'canceled'] and transaction.status == 'pending':
-            transaction.status = status
-            db.session.commit()
-            return redirect(url_for('transactions'))
+    # if request.method == 'POST':
+    #     status = request.form['status']
+    #     if status in ['confirmed', 'canceled'] and transaction.status == 'pending':
+    #         transaction.status = status
+    #         db.session.commit()
+    #         return redirect(url_for('transactions'))
 
     return render_template('transaction_detail.html', transaction=transaction)
 
