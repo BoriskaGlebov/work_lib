@@ -11,18 +11,18 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), nullable=False, unique=True)
-    email = db.Column(db.String(254), nullable=False, unique=True)
-    password_hash = db.Column(db.String(128), nullable=False)  # Хэш пароля
+    # email = db.Column(db.String(254), nullable=False, unique=True)
+    # password_hash = db.Column(db.String(128), nullable=False)  # Хэш пароля?
     balance = db.Column(db.Float, nullable=False, default=0.0)
     commission_rate = db.Column(db.Float, nullable=False, default=0.05)
-    role = db.Column(db.String(20), default='user')  # Add this line
+    # role = db.Column(db.String(20), default='user')  # Add this line
     webhook_url = db.Column(db.String(255), nullable=True)
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+    # def set_password(self, password):
+    #     self.password_hash = generate_password_hash(password)
 
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+    # def check_password(self, password):
+    #     return check_password_hash(self.password_hash, password)
 
     def __repr__(self):
         return f'<User {self.username}>'

@@ -1,20 +1,33 @@
 import os
+import click
 from datetime import datetime
-
+from flask_login import login_required, current_user
 from flasgger import Swagger
 from flask import Flask, request, redirect, url_for, render_template, jsonify, flash
+# from sqlalchemy.sql.functions import current_user
+from flask_login import LoginManager
 
 from forms import LoginForm, RegistrationForm
 from models import db, User, Transaction
 from config import Config
-from commands import admin_commands
+
+# from commands import admin_commands
 
 app = Flask(__name__)
 app.config.from_object(Config)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # Замените на ваш собственный секретный ключ
+# app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # Замените на ваш собственный секретный ключ
 # Инициализация Swagger.
-swagger = Swagger(app,template_file='swagger.yml')
+swagger = Swagger(app, template_file='swagger.yml')
 db.init_app(app)
+
+# # Initialize LoginManager
+# login_manager = LoginManager()
+# login_manager.init_app(app)
+# login_manager.login_view = 'login'  # Set the login view
+#
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User.query.get(int(user_id))  # Adjust according to your user retrieval logic
 
 
 with app.app_context():
@@ -23,64 +36,23 @@ with app.app_context():
     user1 = User(balance=100,
                  username="testUser",
                  commission_rate=10,
-                 email="user@email.ru",
-                 password_hash=123,
+                 # email="user@email.ru",
+                 # password_hash=123,
                  webhook_url="http://localhosts")  # Создание базы данных и таблиц
-    user1.set_password(password='123')
+    # user1.set_password(password='123')
     tranz = Transaction(amount=100, commission=10, status='confirmed', user_id=1)
     db.session.add_all([user1, tranz])
     db.session.commit()
 
-app.cli.add_command(admin_commands)
 
-
-@app.cli.command('create-admin')
-def create_admin():
+# app.cli.add_command(admin_commands)
+@app.cli.command("create-admin")
+@click.argument("admin")
+def create_user(admin):
     """Создает дефолтного администратора."""
-    admin_user = User(username='admin', email='admin@example.com')
-    admin_user.set_password('admin123')
-
+    admin_user = User(username='admin')
     db.session.add(admin_user)
     db.session.commit()
-
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    """Регистрация нового пользователя."""
-
-    form = RegistrationForm()
-
-    if form.validate_on_submit():
-        new_user = User(username=form.username.data,
-                        email=form.email.data,
-                        balance=form.balance.data)
-        new_user.set_password(form.password.data)
-
-        db.session.add(new_user)
-        db.session.commit()
-
-        flash('Регистрация прошла успешно!', 'success')
-        return redirect(url_for('login'))
-
-    return render_template('register.html', form=form)
-
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Вход пользователя."""
-
-    form = LoginForm()
-
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-
-        if user and user.check_password(form.password.data):
-            flash('Вы успешно вошли!', 'success')
-            return redirect(url_for('dashboard'))
-
-        flash('Неверный логин или пароль.', 'danger')
-
-    return render_template('login.html', form=form)
 
 
 @app.route('/')
@@ -105,12 +77,16 @@ def users():
     """Страница пользователей."""
     if request.method == 'POST':
         username = request.form['username']
-        email = request.form['email']
-        new_user = User(username=username, email=email)
+        balance = request.form['balance']
+        commission_rate = request.form['commission_rate']
+        new_user = User(username=username)
+        if balance:
+            new_user.balance = balance
+        if commission_rate:
+            new_user.commission_rate = commission_rate
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for('users'))
-    #
     user_list = User.query.all()
     return render_template('users.html', users=user_list)
 
@@ -139,21 +115,16 @@ def transaction_detail(transaction_id):
 
 @app.route('/create_transaction', methods=['POST'])
 def create_transaction():
+    """Создать транзакцию"""
     data = request.json
-
-    # Проверка наличия обязательного параметра amount
     if 'amount' not in data:
         return jsonify({"error": "Поле 'amount' обязательно для заполнения."}), 400
 
     amount = data['amount']
     user = data['user_id']
-
-    # Создание новой транзакции
     transaction = Transaction(amount=amount, user_id=user)
-
     # Расчет комиссии
     transaction.calculate_commission()
-
     # Сохранение транзакции в базе данных
     db.session.add(transaction)
     db.session.commit()
@@ -173,7 +144,7 @@ def cancel_transaction():
     transaction_id = data['id']
 
     # Получение транзакции из базы данных
-    transaction = Transaction.query.get(transaction_id)
+    transaction = db.session.get(Transaction, transaction_id)  # Updated line
 
     if not transaction:
         return jsonify({"error": "Транзакция не найдена."}), 404
@@ -190,7 +161,7 @@ def cancel_transaction():
 @app.route('/check_transaction/<int:transaction_id>', methods=['GET'])
 def check_transaction(transaction_id):
     """Проверка статуса транзакции по ID."""
-    transaction = Transaction.query.get(transaction_id)
+    transaction = db.session.get(Transaction, transaction_id)  # Updated line
 
     if not transaction:
         return jsonify({"error": "Транзакция не найдена."}), 404
@@ -205,4 +176,4 @@ def check_transaction(transaction_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

@@ -1,0 +1,13 @@
+
+
+services:
+  app:
+    build: .
+#    volumes:
+#      - .:/app  # Mount the current directory to /app in the container
+    ports:
+      - "5000:5000"  # Map port 5000 of the container to port 5000 on the host
+    command:
+      - "flask create-admin admin"
+    environment:
+      - FLASK_ENV=development  # Set Flask environment to development
