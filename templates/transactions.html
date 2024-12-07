@@ -1,0 +1,36 @@
+<!-- templates/transactions.html -->
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>Transactions</h1>
+
+<table class="table table-striped mt-4">
+  <thead>
+      <tr>
+          <th>ID</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Actions</th> <!-- Добавлено поле для действий -->
+      </tr>
+  </thead>
+  <tbody>
+      {% for transaction in transactions %}
+      <tr>
+          <td>{{ transaction.id }}</td>
+          <td>${{ transaction.amount }}</td>
+          <td>{{ transaction.status }}</td>
+
+          <!-- Кнопки для изменения статуса -->
+          {% if transaction.status == 'pending' %}
+              <td><a href="{{ url_for('transaction_detail', transaction_id=transaction.id) }}" class="btn btn-primary">View Details</a></td>
+          {% else %}
+              <!-- Если статус не "ожидание", кнопка не отображается -->
+              <td>N/A</td>
+          {% endif %}
+
+      </tr>
+      {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

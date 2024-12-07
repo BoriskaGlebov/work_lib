@@ -1,0 +1,32 @@
+<!-- templates/users.html -->
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>Users</h1>
+
+<form method="POST" action="{{ url_for('users') }}">
+  <input type="text" name="username" placeholder="Username" required />
+  <input type="email" name="email" placeholder="Email" required />
+  <button type="submit">Add User</button>
+</form>
+
+<table class="table table-striped mt-4">
+  <thead>
+      <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+      </tr>
+  </thead>
+  <tbody>
+      {% for user in users %}
+      <tr>
+          <td>{{ user.id }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.email }}</td>
+      </tr>
+      {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
