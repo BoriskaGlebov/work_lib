@@ -38,4 +38,6 @@ http://localhost:5555
 ```bash
  docker compose up -d --build
 ```
+## Пример запроса на добавления транзакции 
+![img.png](img.png)
 
