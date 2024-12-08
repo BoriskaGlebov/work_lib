@@ -1,14 +1,10 @@
 from datetime import datetime, timedelta
-
 import requests
 from celery import Celery
 from celery.schedules import crontab
-from flask import request
 
 from app import app
-from models import Transaction, db  # Import your database instance
-
-# from models import Transaction  # Import your Transaction model
+from models import Transaction, db
 
 periodic_app = Celery(
     'tasks',
@@ -17,71 +13,54 @@ periodic_app = Celery(
 )
 
 
-
 @periodic_app.task
-def check_pending_transactions():
-    """Check for pending transactions and update their status."""
-    # Get the current time
-    now = datetime.now()
+def check_pending_transactions() -> dict:
+    """
+    Проверяет ожидающие транзакции, которые старше 15 минут,
+    и обновляет их статус на 'Expired' (истекший).
 
-    # Find transactions with status 'Pending' older than 15 minutes
-    fifteen_minutes_ago = now - timedelta(minutes=1)
+    Эта функция запрашивает базу данных на наличие транзакций со
+    статусом 'Pending' (ожидающий), созданных более 15 минут назад.
+    Она обновляет их статус на 'Expired' и отправляет уведомление
+    по вебхуку на указанный URL.
+
+    Returns:
+        dict: Словарь, содержащий количество истекших транзакций.
+    """
+
+    # Получаем текущее время
+    now: datetime = datetime.now()
+
+    # Находим транзакции со статусом 'Pending', старше 15 минут
+    fifteen_minutes_ago: datetime = now - timedelta(minutes=1)
     print(fifteen_minutes_ago)
+
     with app.app_context():
-        expired_transactions = Transaction.query.filter(
+        expired_transactions: list[Transaction] = Transaction.query.filter(
             Transaction.status == 'pending',
             Transaction.created_at < fifteen_minutes_ago
         ).all()
 
         for transaction in expired_transactions:
-            # Update the transaction status to 'Expired'
+            # Обновляем статус транзакции на 'Expired'
             print(transaction)
             transaction.status = 'expired'
             db.session.commit()
 
-            # Send webhook notification
-            # webhook_url = transaction.webhook_url  # Assuming you have a webhook URL field in your model
-            webhook_url=f'http://localhost:5000/transactions/{transaction.id}'
-            payload = {
+            # Отправляем уведомление по вебхуку
+            webhook_url: str = f'http://localhost:5000/transactions/{transaction.id}'
+            payload: dict = {
                 "id": transaction.id,
                 "status": "expired"
             }
             requests.put(webhook_url, json=payload)
-        return {"expired_tranzaction":len(expired_transactions)}
+
+        return {"expired_transaction": len(expired_transactions)}
+
 
 periodic_app.conf.beat_schedule = {
     'check-pending-transactions-every-minute': {
         'task': 'celery_file.check_pending_transactions',
-        'schedule': crontab(minute='*'),  # Every minute
+        'schedule': crontab(minute='*'),  # Каждую минуту
     },
 }
-
-if __name__ == '__main__':
-    now = datetime.now()
-    fifteen_minutes_ago = now - timedelta(minutes=1)
-    print(fifteen_minutes_ago)
-    with app.app_context():
-        expired_transactions = Transaction.query.filter(
-            Transaction.status == 'pending',
-            # Transaction.created_at < fifteen_minutes_ago
-        ).all()
-
-        for transaction in expired_transactions:
-            # Update the transaction status to 'Expired'
-            print(transaction)
-        for transaction in expired_transactions:
-            # Update the transaction status to 'Expired'
-            print(transaction)
-            transaction.status = 'expired'
-            db.session.commit()
-
-            # Send webhook notification
-            # webhook_url = transaction.webhook_url  # Assuming you have a webhook URL field in your model
-            webhook_url=f'http://localhost:5000/transactions/{transaction.id}'
-            payload = {
-                "id": transaction.id,
-                "status": "expired"
-            }
-            res=requests.post(webhook_url, json=payload)
-            print(res.status_code)
-

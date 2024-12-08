@@ -66,3 +66,4 @@ wtf==0.1
 WTForms==3.2.1
 
 loguru~=0.7.3
+pytest~=8.3.4
