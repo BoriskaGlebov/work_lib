@@ -2,6 +2,29 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from app import app, db, User, Transaction
 from config import logger
+
+
+def test_login(client):
+    """Test the login functionality."""
+    response = client.post('/login', data={'username': 'admin','password':'asd'})
+    assert response.status_code == 302  # Check for redirect after login
+    assert b'Dashboard' in response.data  # Check if the dashboard is accessible
+
+
+def test_create_user(client):
+    """Test creating a new user."""
+    response = client.post('/users', data={
+        'username': 'newuser',
+        'balance': 100,
+        'commission_rate': 0.01,
+    })
+
+    assert response.status_code == 302  # Check for redirect after creating user
+    user = User.query.filter_by(username='newuser').first()
+    assert user is not None  # Ensure the user was created
+
+
+
 def test_create_user(client):
     response = client.post('/users', data={'username': 'testUser1', 'balance': 1001, 'commission_rate': 0.01})
     assert response.status_code == 302  # Redirect after successful creation

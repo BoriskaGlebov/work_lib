@@ -24,5 +24,4 @@ EXPOSE 5000
 
 # Command to run the application
 
-CMD ["flask", "run", "--host=0.0.0.0"]
-#CMD ["flask", "create-admin", "admin"]
+CMD ["sh", "-c", "flask create-admin admin && flask run --host=0.0.0.0"]

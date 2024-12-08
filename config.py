@@ -15,6 +15,7 @@ class Config:
     """
     SQLALCHEMY_DATABASE_URI: str = f"sqlite:///{os.path.join(current_directory, 'test.db')}"
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
+    SECRET_KEY=os.getenv('SECRET_KEY')
 
 # Удаляем все существующие обработчики
 logger.remove()

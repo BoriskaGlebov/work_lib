@@ -1,13 +1,35 @@
 
-
 services:
-  app:
+  web:
     build: .
-#    volumes:
-#      - .:/app  # Mount the current directory to /app in the container
-    ports:
-      - "5000:5000"  # Map port 5000 of the container to port 5000 on the host
-    command:
-      - "flask create-admin admin"
     environment:
-      - FLASK_ENV=development  # Set Flask environment to development
+      TZ: Europe/Moscow
+    ports:
+      - "5000:5000"
+
+  celery:
+    build: .
+    environment:
+      TZ: Europe/Moscow
+    command: celery -A celery_file.periodic_app worker --loglevel=info
+#
+  celery-beat:
+    build: .
+    environment:
+      TZ: Europe/Moscow
+    command: celery -A celery_file.periodic_app beat --loglevel=info
+#
+  flower:
+    build: .
+    environment:
+      TZ: Europe/Moscow
+    command: celery -A app.celery flower --port=5555
+    ports:
+      - "5555:5555"
+#
+  redis:
+    image: "redis:alpine"
+    environment:
+      TZ: Europe/Moscow
+    ports:
+      - "6379:6379"

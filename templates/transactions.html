@@ -1,8 +1,31 @@
-<!-- templates/transactions.html -->
 {% extends "layout.html" %}
 
 {% block content %}
 <h1>Transactions</h1>
+
+<!-- Форма фильтрации -->
+<form method="GET" action="{{ url_for('transactions') }}">
+    {% if current_user.is_admin %}
+        <label for="user_id">Filter by User:</label>
+        <select name="user_id" id="user_id">
+            <option value="">All Users</option>
+            {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endfor %}
+        </select>
+    {% endif %}
+
+    <label for="status">Filter by Status:</label>
+    <select name="status" id="status">
+        <option value="">All Statuses</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="pending">Pending</option>
+        <option value="canceled">Canceled</option>
+        <option value="expired">Expired</option>
+    </select>
+
+    <button type="submit">Apply Filters</button>
+</form>
 
 <table class="table table-striped mt-4">
     <thead>
@@ -11,7 +34,7 @@
         <th>Amount</th>
         <th>Commission</th>
         <th>Status</th>
-        <th>Actions</th> <!-- Добавлено поле для действий -->
+        <th>Actions</th> <!-- Added actions field -->
     </tr>
     </thead>
     <tbody>
@@ -19,19 +42,16 @@
     <tr>
         <td>{{ transaction.id }}</td>
         <td>${{ transaction.amount }}</td>
-        <td>${{ transaction.commission}}</td>
+        <td>${{ transaction.commission }}</td>
         <td>{{ transaction.status }}</td>
 
-
-        <!-- Кнопки для изменения статуса -->
-        {% if transaction.status == 'pending' %}
-        <td><a href="{{ url_for('transaction_detail', transaction_id=transaction.id) }}" class="btn btn-primary">View
-            Details</a></td>
+        <!-- Buttons for changing status -->
+        {% if current_user.is_admin and transaction.status == 'pending' %}
+            <td><a href="{{ url_for('transaction_detail', transaction_id=transaction.id) }}" class="btn btn-primary">View Details</a></td>
         {% else %}
-        <!-- Если статус не "ожидание", кнопка не отображается -->
-        <td>N/A</td>
+            <!-- If status is not "pending", button is not displayed -->
+            <td>N/A</td>
         {% endif %}
-
     </tr>
     {% endfor %}
     </tbody>

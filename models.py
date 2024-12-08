@@ -1,9 +1,9 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-
+from flask_login import UserMixin
 db = SQLAlchemy()
 
-class User(db.Model):
+class User(UserMixin,db.Model):
     """Модель пользователя.
 
     Attributes:
@@ -20,6 +20,19 @@ class User(db.Model):
     balance: float = db.Column(db.Float, nullable=False, default=0.0)
     commission_rate: float = db.Column(db.Float, nullable=False, default=0.05)
     webhook_url: str = db.Column(db.String(255), nullable=True, default=f"http://localhost:5000/user/")
+    is_admin = db.Column(db.Boolean, default=False)  # Поле для роли администратора
+
+    # @property
+    # def is_active(self):
+    #     return True  # Здесь вы можете добавить логику для проверки активности пользователя
+    #
+    # @property
+    # def is_authenticated(self):
+    #     return True  # Пользователь считается аутентифицированным после входа
+    #
+    # @property
+    # def is_anonymous(self):
+    #     return False  # Пользователь не анонимный после входа
 
     def __repr__(self) -> str:
         """Возвращает строковое представление объекта User.

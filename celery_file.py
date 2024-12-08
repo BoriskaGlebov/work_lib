@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta
+from venv import logger
+
 import requests
 from celery import Celery
 from celery.schedules import crontab
+from flask_login import login_user
 
 from app import app
-from models import Transaction, db
+from models import Transaction, db, User
 
 periodic_app = Celery(
     'tasks',
@@ -41,6 +44,8 @@ def check_pending_transactions() -> dict:
             Transaction.created_at < fifteen_minutes_ago
         ).all()
 
+
+        # login_user(admin_user)
         for transaction in expired_transactions:
             # Обновляем статус транзакции на 'Expired'
             print(transaction)

@@ -32,3 +32,9 @@
 5. Проверка работы приложения 
 http://localhost:5000
 http://localhost:5555
+
+ЭТо все запуск с командной строки в разных терминалах
+
+```bash
+ docker compose up -d --build
+```

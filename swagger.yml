@@ -8,312 +8,349 @@ basePath: "/"
 schemes:
   - "http"
 paths:
-  /:
-    get:
-      summary: "Dashboard"
-      description: "Get dashboard statistics and render the dashboard page."
-      tags:
-        - "Dashboard"  # Tag for grouping
-      produces:
-        - "text/html"  # Specify that this endpoint returns HTML
-      responses:
-        200:
-          description: "Successful response with rendered HTML page"
-          examples:
-            text/html: |
-              <html>
-                <head><title>Dashboard</title></head>
-                <body>
-                  <h1>Dashboard</h1>
-                  <div>Total Users: 10</div>
-                  <div>Total Transactions: 5</div>
-                  <div>Total Amount Today: $150.75</div>
-                  <h2>Recent Transactions</h2>
-                  <table>
-                    <tr><th>ID</th><th>Amount</th><th>Status</th></tr>
-                    <tr><td>1</td><td>$100.00</td><td>Confirmed</td></tr>
-                    <!-- More rows as needed -->
-                  </table>
-                </body>
-              </html>
-
-  /users:
-    get:
-      summary: "Get users"
-      tags:
-        - "Users"  # Tag for grouping
-      description: "Retrieve a list of users."
-      produces:
-        - "text/html"  # Specify that this endpoint returns HTML
-      responses:
-        200:
-          description: "Successful response with rendered HTML page"
-          examples:
-            text/html: |
-              <html>
-                <head><title>Dashboard</title></head>
-                <body>
-                  <h1>Dashboard</h1>
-                  <div>Total Users: 10</div>
-                  <div>Total Transactions: 5</div>
-                  <div>Total Amount Today: $150.75</div>
-                  <h2>Recent Transactions</h2>
-                  <table>
-                    <tr><th>ID</th><th>Amount</th><th>Status</th></tr>
-                    <tr><td>1</td><td>$100.00</td><td>Confirmed</td></tr>
-                    <!-- More rows as needed -->
-                  </table>
-                </body>
-              </html>
+  /login:
     post:
-      summary: "Create user"
       tags:
-        - "Users"  # Tag for grouping
-      description: "Add a new user to the system."
-
-#      consumes:
-#        - "application/x-www-form-urlencoded"
+        - "Authentication"
+      summary: "User login"
       parameters:
         - name: username
-          description: "Username of the new user"
           in: formData
           required: true
           type: string
-        - name: balance
-          description: "Initial balance of the user"
+          description: "The username of the user."
+        - name: password
           in: formData
-          required: false
-          type: number
-        - name: commission_rate
-          description: "Commission rate for the user"
-          in: formData
-          required: false
-          type: number
-      produces:
-        - "text/html"  # Specify that this endpoint returns HTML
-      responses:
-        200:
-          description: "Successful response with rendered HTML page"
-          examples:
-            text/html: |
-              <html>
-                <head><title>Dashboard</title></head>
-                <body>
-                  <h1>Dashboard</h1>
-                  <div>Total Users: 10</div>
-                  <div>Total Transactions: 5</div>
-                  <div>Total Amount Today: $150.75</div>
-                  <h2>Recent Transactions</h2>
-                  <table>
-                    <tr><th>ID</th><th>Amount</th><th>Status</th></tr>
-                    <tr><td>1</td><td>$100.00</td><td>Confirmed</td></tr>
-                    <!-- More rows as needed -->
-                  </table>
-                </body>
-              </html>
-
-
-  /transactions:
-    get:
-      summary: "Get transactions"
-      tags:
-        - "Transactions"
-      description: "Retrieve a list of transactions."
-      produces:
-        - "text/html"  # Specify that this endpoint returns HTML
-      responses:
-        200:
-          description: "Successful response with rendered HTML page"
-          examples:
-            text/html: |
-              <html>
-                <head><title>Dashboard</title></head>
-                <body>
-                  <h1>Dashboard</h1>
-                  <div>Total Users: 10</div>
-                  <div>Total Transactions: 5</div>
-                  <div>Total Amount Today: $150.75</div>
-                  <h2>Recent Transactions</h2>
-                  <table>
-                    <tr><th>ID</th><th>Amount</th><th>Status</th></tr>
-                    <tr><td>1</td><td>$100.00</td><td>Confirmed</td></tr>
-                    <!-- More rows as needed -->
-                  </table>
-                </body>
-              </html>
-#
-  /transactions/{transaction_id}:
-    get:
-      summary: "Get transaction details"
-      tags:
-        - "Transactions"
-      description: "Retrieve details for a specific transaction."
-      produces:
-        - "text/html"  # Specify that this endpoint returns HTML
-      parameters:
-        - name: transaction_id
-          in: path
           required: true
-          type: integer
+          type: string
+          description: "The password of the user."
       responses:
         200:
-          description: "Transaction details retrieved successfully"
-          examples:
-            text/html: |
-              <html>
-                <head><title>Dashboard</title></head>
-                <body>
-                  <h1>Dashboard</h1>
-                  <div>Total Users: 10</div>
-                  <div>Total Transactions: 5</div>
-                  <div>Total Amount Today: $150.75</div>
-                  <h2>Recent Transactions</h2>
-                  <table>
-                    <tr><th>ID</th><th>Amount</th><th>Status</th></tr>
-                    <tr><td>1</td><td>$100.00</td><td>Confirmed</td></tr>
-                    <!-- More rows as needed -->
-                  </table>
-                </body>
-              </html>
-        404:
-          description: "Transaction not found"
-#
-
-##
-  /create_transaction:
-    post:
-      summary: "Create transaction"
-      tags:
-        - "API Methods"
-      description: "Create a new transaction."
-      consumes:
-        - application/json
-      parameters:
-        - name: transaction_data
-          in: body
-          required: true
-          description: "Transaction data to create a new transaction."
-          schema:
-            type: object
-            properties:
-              amount:
-                type: number
-                format: float
-                example: 1000  # Default value for amount
-              user_id:
-                type: integer
-                example: 3  # Default value for user_id
-            required:
-              - amount
-              - user_id
-      responses:
-        201:
-          description: "Transaction created successfully"
-          schema:
-            type: object
-            properties:
-              id:
-                type: integer
-                example: 2  # Example ID of the newly created transaction
-        400:
-          description: "'amount' and 'user_id' are required"
-
-  /cancel_transaction:
-    post:
-      summary: "Cancel transaction by ID"
-      tags:
-        - "API Methods"  # Tag for grouping
-      description: "Cancel an existing transaction using its ID."
-      consumes:
-        - application/json
-      parameters:
-        - name: id
-          in: body
-          required: true
-          description: "ID of the transaction to cancel."
-          schema:
-            type: object
-            properties:
-              id:
-                type: integer
-                example: 1  # Example transaction ID
-            required:
-              - id
-      responses:
-        200:
-          description: "Transaction canceled successfully"
+          description: "Returns user information and authentication token on successful login."
           schema:
             type: object
             properties:
               message:
                 type: string
-                example: "Транзакция отменена."
-              transaction_id:
-                type: integer
-                example: 1  # Example transaction ID
+                example: "Login successful."
+              token:
+                type: string
+                example: "your_auth_token_here"
         400:
-          description: "'id' is required or cannot cancel the transaction with the current status."
+          description: "Invalid username or password."
           schema:
             type: object
             properties:
               error:
                 type: string
-                example: "Невозможно отменить транзакцию с текущим статусом."
-        404:
-          description: "Transaction not found."
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-                example: "Транзакция не найдена."
+                example: "Invalid username or password."
 
-  /check_transaction/{transaction_id}:
-    get:
-      summary: "Check transaction status by ID"
-      tags:
-        - "API Methods"  # Tag for grouping
-      description: "Retrieve the status of a transaction by its ID."
-      produces:
-        - application/json
-      parameters:
-        - name: transaction_id
-          in: path
-          required: true
-          description: "ID of the transaction to check."
-          type: integer
-      responses:
-        200:
-          description: "Transaction details retrieved successfully"
-          schema:
-            type: object
-            properties:
-              id:
-                type: integer
-                example: 1  # Example transaction ID
-              amount:
-                type: number
-                format: float
-                example: 100.00  # Example amount
-              commission:
-                type: number
-                format: float
-                example: 10.00   # Example commission amount
-              status:
-                type: string
-                example: "confirmed"  # Example status of the transaction
-              created_at:
-                type: string
-                format: date-time
-                example: "2024-12-07T12:34:56Z"  # Example created time in ISO format
-        404:
-          description: "Transaction not found."
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-                example: "Транзакция не найдена."
+#  /:
+#    get:
+#      summary: "Dashboard"
+#      description: "Get dashboard statistics and render the dashboard page."
+#      tags:
+#        - "Dashboard"  # Tag for grouping
+#      produces:
+#        - "text/html"  # Specify that this endpoint returns HTML
+#      responses:
+#        200:
+#          description: "Successful response with rendered HTML page"
+#          examples:
+#            text/html: |
+#              <html>
+#                <head><title>Dashboard</title></head>
+#                <body>
+#                  <h1>Dashboard</h1>
+#                  <div>Total Users: 10</div>
+#                  <div>Total Transactions: 5</div>
+#                  <div>Total Amount Today: $150.75</div>
+#                  <h2>Recent Transactions</h2>
+#                  <table>
+#                    <tr><th>ID</th><th>Amount</th><th>Status</th></tr>
+#                    <tr><td>1</td><td>$100.00</td><td>Confirmed</td></tr>
+#                    <!-- More rows as needed -->
+#                  </table>
+#                </body>
+#              </html>
+#
+#  /users:
+#    get:
+#      summary: "Get users"
+#      tags:
+#        - "Users"  # Tag for grouping
+#      description: "Retrieve a list of users."
+#      produces:
+#        - "text/html"  # Specify that this endpoint returns HTML
+#      responses:
+#        200:
+#          description: "Successful response with rendered HTML page"
+#          examples:
+#            text/html: |
+#              <html>
+#                <head><title>Dashboard</title></head>
+#                <body>
+#                  <h1>Dashboard</h1>
+#                  <div>Total Users: 10</div>
+#                  <div>Total Transactions: 5</div>
+#                  <div>Total Amount Today: $150.75</div>
+#                  <h2>Recent Transactions</h2>
+#                  <table>
+#                    <tr><th>ID</th><th>Amount</th><th>Status</th></tr>
+#                    <tr><td>1</td><td>$100.00</td><td>Confirmed</td></tr>
+#                    <!-- More rows as needed -->
+#                  </table>
+#                </body>
+#              </html>
+#    post:
+#      summary: "Create user"
+#      tags:
+#        - "Users"  # Tag for grouping
+#      description: "Add a new user to the system."
+#
+##      consumes:
+##        - "application/x-www-form-urlencoded"
+#      parameters:
+#        - name: username
+#          description: "Username of the new user"
+#          in: formData
+#          required: true
+#          type: string
+#        - name: balance
+#          description: "Initial balance of the user"
+#          in: formData
+#          required: false
+#          type: number
+#        - name: commission_rate
+#          description: "Commission rate for the user"
+#          in: formData
+#          required: false
+#          type: number
+#      produces:
+#        - "text/html"  # Specify that this endpoint returns HTML
+#      responses:
+#        200:
+#          description: "Successful response with rendered HTML page"
+#          examples:
+#            text/html: |
+#              <html>
+#                <head><title>Dashboard</title></head>
+#                <body>
+#                  <h1>Dashboard</h1>
+#                  <div>Total Users: 10</div>
+#                  <div>Total Transactions: 5</div>
+#                  <div>Total Amount Today: $150.75</div>
+#                  <h2>Recent Transactions</h2>
+#                  <table>
+#                    <tr><th>ID</th><th>Amount</th><th>Status</th></tr>
+#                    <tr><td>1</td><td>$100.00</td><td>Confirmed</td></tr>
+#                    <!-- More rows as needed -->
+#                  </table>
+#                </body>
+#              </html>
+#
+#
+#  /transactions:
+#    get:
+#      summary: "Get transactions"
+#      tags:
+#        - "Transactions"
+#      description: "Retrieve a list of transactions."
+#      produces:
+#        - "text/html"  # Specify that this endpoint returns HTML
+#      responses:
+#        200:
+#          description: "Successful response with rendered HTML page"
+#          examples:
+#            text/html: |
+#              <html>
+#                <head><title>Dashboard</title></head>
+#                <body>
+#                  <h1>Dashboard</h1>
+#                  <div>Total Users: 10</div>
+#                  <div>Total Transactions: 5</div>
+#                  <div>Total Amount Today: $150.75</div>
+#                  <h2>Recent Transactions</h2>
+#                  <table>
+#                    <tr><th>ID</th><th>Amount</th><th>Status</th></tr>
+#                    <tr><td>1</td><td>$100.00</td><td>Confirmed</td></tr>
+#                    <!-- More rows as needed -->
+#                  </table>
+#                </body>
+#              </html>
+##
+#  /transactions/{transaction_id}:
+#    get:
+#      summary: "Get transaction details"
+#      tags:
+#        - "Transactions"
+#      description: "Retrieve details for a specific transaction."
+#      produces:
+#        - "text/html"  # Specify that this endpoint returns HTML
+#      parameters:
+#        - name: transaction_id
+#          in: path
+#          required: true
+#          type: integer
+#      responses:
+#        200:
+#          description: "Transaction details retrieved successfully"
+#          examples:
+#            text/html: |
+#              <html>
+#                <head><title>Dashboard</title></head>
+#                <body>
+#                  <h1>Dashboard</h1>
+#                  <div>Total Users: 10</div>
+#                  <div>Total Transactions: 5</div>
+#                  <div>Total Amount Today: $150.75</div>
+#                  <h2>Recent Transactions</h2>
+#                  <table>
+#                    <tr><th>ID</th><th>Amount</th><th>Status</th></tr>
+#                    <tr><td>1</td><td>$100.00</td><td>Confirmed</td></tr>
+#                    <!-- More rows as needed -->
+#                  </table>
+#                </body>
+#              </html>
+#        404:
+#          description: "Transaction not found"
+##
+#
+###
+#  /create_transaction:
+#    post:
+#      summary: "Create transaction"
+#      tags:
+#        - "API Methods"
+#      description: "Create a new transaction."
+#      consumes:
+#        - application/json
+#      parameters:
+#        - name: transaction_data
+#          in: body
+#          required: true
+#          description: "Transaction data to create a new transaction."
+#          schema:
+#            type: object
+#            properties:
+#              amount:
+#                type: number
+#                format: float
+#                example: 1000  # Default value for amount
+#              user_id:
+#                type: integer
+#                example: 3  # Default value for user_id
+#            required:
+#              - amount
+#              - user_id
+#      responses:
+#        201:
+#          description: "Transaction created successfully"
+#          schema:
+#            type: object
+#            properties:
+#              id:
+#                type: integer
+#                example: 2  # Example ID of the newly created transaction
+#        400:
+#          description: "'amount' and 'user_id' are required"
+#
+#  /cancel_transaction:
+#    post:
+#      summary: "Cancel transaction by ID"
+#      tags:
+#        - "API Methods"  # Tag for grouping
+#      description: "Cancel an existing transaction using its ID."
+#      consumes:
+#        - application/json
+#      parameters:
+#        - name: id
+#          in: body
+#          required: true
+#          description: "ID of the transaction to cancel."
+#          schema:
+#            type: object
+#            properties:
+#              id:
+#                type: integer
+#                example: 1  # Example transaction ID
+#            required:
+#              - id
+#      responses:
+#        200:
+#          description: "Transaction canceled successfully"
+#          schema:
+#            type: object
+#            properties:
+#              message:
+#                type: string
+#                example: "Транзакция отменена."
+#              transaction_id:
+#                type: integer
+#                example: 1  # Example transaction ID
+#        400:
+#          description: "'id' is required or cannot cancel the transaction with the current status."
+#          schema:
+#            type: object
+#            properties:
+#              error:
+#                type: string
+#                example: "Невозможно отменить транзакцию с текущим статусом."
+#        404:
+#          description: "Transaction not found."
+#          schema:
+#            type: object
+#            properties:
+#              error:
+#                type: string
+#                example: "Транзакция не найдена."
+#
+#  /check_transaction/{transaction_id}:
+#    get:
+#      summary: "Check transaction status by ID"
+#      tags:
+#        - "API Methods"  # Tag for grouping
+#      description: "Retrieve the status of a transaction by its ID."
+#      produces:
+#        - application/json
+#      parameters:
+#        - name: transaction_id
+#          in: path
+#          required: true
+#          description: "ID of the transaction to check."
+#          type: integer
+#      responses:
+#        200:
+#          description: "Transaction details retrieved successfully"
+#          schema:
+#            type: object
+#            properties:
+#              id:
+#                type: integer
+#                example: 1  # Example transaction ID
+#              amount:
+#                type: number
+#                format: float
+#                example: 100.00  # Example amount
+#              commission:
+#                type: number
+#                format: float
+#                example: 10.00   # Example commission amount
+#              status:
+#                type: string
+#                example: "confirmed"  # Example status of the transaction
+#              created_at:
+#                type: string
+#                format: date-time
+#                example: "2024-12-07T12:34:56Z"  # Example created time in ISO format
+#        404:
+#          description: "Transaction not found."
+#          schema:
+#            type: object
+#            properties:
+#              error:
+#                type: string
+#                example: "Транзакция не найдена."
 
 
 definitions:

@@ -1,14 +1,17 @@
+import os
 from datetime import datetime
 
 import click
 from celery import Celery
 from flasgger import Swagger
 from flask import (Flask, jsonify, redirect, render_template,
-                   request, url_for, Response)
+                   request, url_for, Response, flash)
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
 from sqlalchemy.exc import IntegrityError
 
 from config import Config, logger
+from forms import LoginForm
 from models import Transaction, User, db
 
 app = Flask(__name__)
@@ -19,6 +22,7 @@ celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
 app.config.from_object(Config)
+# app.secret_key = os.getenv('SECRET_KEY')  # Замените на ваш уникальный ключ
 CORS(app)  # Enable CORS for all routes
 # Инициализация Swagger.
 swagger = Swagger(app, template_file="swagger.yml")
@@ -46,7 +50,7 @@ def create_user(admin: str) -> None:
         commission_rate=0.01,
         webhook_url="http://localhosts:5000/user/1",
     )  # Создание базы данных и таблиц
-    admin_user = User(username="admin")
+    admin_user = User(username="admin", is_admin=True)
     transaction_test = Transaction(amount=100, commission=user.commission_rate * 100, status="confirmed", user_id=2)
     transaction_test1 = Transaction(amount=200, commission=user.commission_rate * 200, status="pending", user_id=2)
     transaction_test2 = Transaction(amount=300, commission=user.commission_rate * 300, status="canceled", user_id=2)
@@ -58,26 +62,80 @@ def create_user(admin: str) -> None:
     logger.info("Админ Создан")
 
 
+# Инициализация Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'  # Укажите маршрут для перенаправления при необходимости входа
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()  # Создаем экземпляр формы
+    if form.validate_on_submit():  # Проверяем, была ли форма отправлена и валидна ли она
+        username = form.username.data
+        # password = form.password.data
+        user = User.query.filter_by(username=username).first()  # Получаем пользователя из базы данных
+
+        if user:  # Здесь вы можете добавить хеширование паролей
+            login_user(user)  # Входим в систему
+            return redirect(url_for('dashboard'))  # Перенаправляем на дашборд после успешного входа
+        else:
+            flash('Неверное имя пользователя или пароль.')  # Сообщение об ошибке
+
+    return render_template('login.html', form=form)  # Передаем форму в шаблон
+#
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))  # Перенаправление на страницу входа после выхода
+
+
 @app.route("/")
+@login_required
 def dashboard() -> str:
     """Dashboard с транзакциями. Транзакции отмененные или с истекшим сроком не считает
 
     :return: HTML шаблон дашборда (строка).
     """
     total_users = User.query.count()
-    total_transactions = Transaction.query.count()
 
-    today_transactions = Transaction.query.filter(
-        Transaction.created_at >= datetime.now().date()
-    ).all()
+    if current_user.is_admin:
+        # Если пользователь администратор, показываем все транзакции
+        total_transactions = Transaction.query.count()
 
-    total_amount_today = sum(
-        transaction.amount
-        for transaction in today_transactions if transaction.status not in ['canceled', 'expired'])
+        today_transactions = Transaction.query.filter(
+            Transaction.created_at >= datetime.now().date()
+        ).all()
 
-    recent_transactions = (
-        Transaction.query.order_by(Transaction.id.desc()).limit(5).all()
-    )
+        total_amount_today = sum(
+            transaction.amount for transaction in today_transactions
+            if transaction.status not in ['canceled', 'expired']
+        )
+
+        recent_transactions = Transaction.query.order_by(Transaction.id.desc()).limit(5).all()
+    else:
+        # Если пользователь обычный, показываем только его транзакции
+        total_transactions = Transaction.query.filter_by(user_id=current_user.id).count()
+
+        today_transactions = Transaction.query.filter(
+            Transaction.user_id == current_user.id,
+            Transaction.created_at >= datetime.now().date()
+        ).all()
+
+        total_amount_today = sum(
+            transaction.amount for transaction in today_transactions
+            if transaction.status not in ['canceled', 'expired']
+        )
+
+        recent_transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(
+            Transaction.id.desc()).limit(5).all()
 
     return render_template(
         "dashboard.html",
@@ -89,11 +147,15 @@ def dashboard() -> str:
 
 
 @app.route("/users", methods=["GET", "POST"])
+@login_required
 def users() -> Response | tuple[str, int] | str:
     """Страница создания и получения пользователей.
 
     :return: HTML шаблон страницы пользователей (строка).
     """
+    if not current_user.is_admin:
+        flash("You do not have permission to view this page.")
+        return redirect(url_for('dashboard'))
     if request.method == "POST":
         username = request.form["username"]
         balance = request.form.get("balance")
@@ -123,17 +185,39 @@ def users() -> Response | tuple[str, int] | str:
 
 
 @app.route("/transactions", methods=["GET"])
+@login_required
 def transactions() -> str:
     """Страница со всеми транзакциями.
 
     :return: HTML шаблон страницы транзакций (строка).
     """
-    transaction_list = Transaction.query.all()
+    user_id = request.args.get('user_id')  # Получаем ID пользователя из параметров запроса
+    status = request.args.get('status')  # Получаем статус из параметров запроса
 
-    return render_template("transactions.html", transactions=transaction_list)
+    query = Transaction.query
+
+    # Фильтрация по пользователю
+    if current_user.is_admin:
+        # If the user is an admin, they can filter by user
+        if user_id:
+            query = query.filter(Transaction.user_id == user_id)
+
+    else:
+        # If the user is a regular user, show only their transactions
+        query = query.filter(Transaction.user_id == current_user.id)
+
+    # Фильтрация по статусу
+    if status:
+        query = query.filter(Transaction.status == status)
+
+    transaction_list = query.all()  # Получаем отфильтрованные транзакции
+    users = User.query.all()  # Получаем всех пользователей для выпадающего списка фильтра
+
+    return render_template("transactions.html", transactions=transaction_list, users=users)
 
 
 @app.route("/transactions/<int:transaction_id>", methods=["GET", "PUT", "POST"])
+@login_required
 def transaction_detail(transaction_id: int) -> str | Response:
     """Детальный просмотр транзакции и обновление статуса транзакций.
 
