@@ -1,0 +1,185 @@
+swagger: "2.0"
+info:
+  description: "API documentation for the Flask application."
+  version: "1.0.0"
+  title: "Flask Application API"
+host: "localhost:5000"
+basePath: "/"
+schemes:
+  - "http"
+securityDefinitions:
+  BasicAuth:
+    type: "basic"
+    description: "Basic authentication for admin users."
+
+paths:
+  /login:
+    post:
+      tags:
+        - "Authentication"
+      summary: "User login"
+      description: "Authenticate a user with username and password."
+      security:
+        - BasicAuth: [ ]  # Require Basic Auth for this endpoint
+      parameters:
+        - name: username
+          in: formData
+          required: true
+          type: string
+          description: "The username of the user."
+        - name: password
+          in: formData
+          required: true
+          type: string
+          description: "The password of the user."
+      responses:
+        200:
+          description: "Returns user information on successful login."
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Login successful."
+              user:
+                type: string
+                example: "admin"
+        401:
+          description: "Invalid username or password."
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid credentials."
+
+  /logout:
+    get:
+      tags:
+        - "Authentication"
+      summary: "User logout"
+      description: "Log out the currently authenticated user."
+      security:
+        - BasicAuth: [ ]  # Require Basic Auth for this endpoint
+      responses:
+        200:
+          description: "User logged out successfully."
+
+    /users:
+      get:
+        tags:
+          - "Users"
+        summary: "Get all users (admin only)"
+        description: "This endpoint retrieves a list of all users. Only accessible by admin users."
+        security:
+          - BasicAuth: [ ]  # Require Basic Auth for this endpoint
+        responses:
+          200:
+            description: "Returns a list of users."
+            schema:
+              type: array
+              items:
+                $ref: "#/definitions/User"
+          403:
+            description: "Forbidden. Only admin users can access this resource."
+
+      post:
+        tags:
+          - "Users"
+        summary: "Create a new user (admin only)"
+        description: "This endpoint allows an admin to create a new user."
+        security:
+          - BasicAuth: [ ]  # Require Basic Auth for this endpoint
+        parameters:
+          - name: username
+            in: formData
+            required: true
+            type: string
+            description: "The username of the new user."
+          - name: balance
+            in: formData
+            required: false
+            type: number
+            format: float
+            description: "Initial balance for the new user."
+          - name: commission_rate
+            in: formData
+            required: false
+            type: number
+            format: float
+            description: "Commission rate for the new user."
+        responses:
+          201:
+            description: "User created successfully."
+          403:
+            description: "Forbidden. Only admin users can create new users."
+          400:
+            description: "User with this username already exists."
+
+  /transactions:
+    get:
+      tags:
+        - "Transactions"
+      summary: "Get all transactions or filter by user and status"
+      security:
+        - BasicAuth: [ ]  # Require Basic Auth for this endpoint
+      parameters:
+        - name: user_id
+          in: query
+          required: false
+          type: integer
+          description: "Filter transactions by user ID (admin only)."
+        - name: status
+          in: query
+          required: false
+          type: string
+          description: "Filter transactions by status (confirmed, pending, canceled, expired)."
+      responses:
+        200:
+          description: "Returns a list of transactions."
+        403:
+          description:"Forbidden. Only admin users can filter by other users."
+
+    post:
+      tags:
+        - "Transactions"
+      summary: "Create a new transaction"
+      security:
+        - BasicAuth: [ ]  # Require Basic Auth for this endpoint
+      parameters:
+        - name: amount
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              amount:
+                type: number
+                format: float
+                example: 100.0
+              user_id:
+                type: integer
+                example: 1
+          responses:
+            201:
+              description: Transaction created successfully.
+            400:
+              description: Missing required fields or invalid user ID.
+
+definitions:
+
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      username:
+        type: string
+        example: admin
+      balance:
+        type: number
+        format: float
+        example: 100.0
+
+# ... Other endpoints with similar security definitions as needed ...

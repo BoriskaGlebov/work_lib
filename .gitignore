@@ -1,5 +1,1 @@
-.*
-*.txt
-!.gitignore
-*.db
-/img
+.idea
