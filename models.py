@@ -1,13 +1,13 @@
 from datetime import datetime
 
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 db = SQLAlchemy()
 
 
 class User(db.Model):
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), nullable=False, unique=True)
@@ -25,21 +25,26 @@ class User(db.Model):
     #     return check_password_hash(self.password_hash, password)
 
     def __repr__(self):
-        return f'<User {self.username}>'
+        return f"<User {self.username}>"
 
 
 class Transaction(db.Model):
-    __tablename__ = 'transactions'
+    __tablename__ = "transactions"
 
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
     amount = db.Column(db.Float, nullable=False)  # Сумма транзакции
     commission = db.Column(db.Float, nullable=False)  # Комиссия за транзакцию
-    status = db.Column(db.Enum('pending', 'confirmed', 'canceled', 'expired'), nullable=False,
-                       default='pending')  # Статус транзакции
+    status = db.Column(
+        db.Enum("pending", "confirmed", "canceled", "expired"),
+        nullable=False,
+        default="pending",
+    )  # Статус транзакции
 
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Связь с пользователем
-    user = db.relationship('User', backref=db.backref('transactions', lazy=True))
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False
+    )  # Связь с пользователем
+    user = db.relationship("User", backref=db.backref("transactions", lazy=True))
 
     def calculate_commission(self):
         # Пример расчета комиссии (можно изменить по необходимости)
@@ -48,4 +53,4 @@ class Transaction(db.Model):
             self.commission = self.amount * user.commission_rate
 
     def __repr__(self):
-        return f'<Transaction {self.id}, Amount: {self.amount}, Commission: {self.commission}, Status: {self.status}>'
+        return f"<Transaction {self.id}, Amount: {self.amount}, Commission: {self.commission}, Status: {self.status}>"
