@@ -1,20 +1,15 @@
-import os
 from datetime import datetime
 
 import click
 from celery import Celery
 from flasgger import Swagger
-from flask import (Flask, Response, flash, jsonify, redirect, render_template,
-                   request, url_for)
+from flask import (Flask, jsonify, redirect, render_template,
+                   request, url_for, Response)
 from flask_cors import CORS
-# from sqlalchemy.sql.functions import current_user
-from flask_login import LoginManager, current_user, login_required
+from sqlalchemy.exc import IntegrityError
 
-from config import Config
-from forms import LoginForm, RegistrationForm
+from config import Config, logger
 from models import Transaction, User, db
-
-# from commands import admin_commands
 
 app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
@@ -25,65 +20,60 @@ celery.conf.update(app.config)
 
 app.config.from_object(Config)
 CORS(app)  # Enable CORS for all routes
-# app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # Замените на ваш собственный секретный ключ
 # Инициализация Swagger.
 swagger = Swagger(app, template_file="swagger.yml")
 db.init_app(app)
-# first_flag=True
 with app.app_context():
-    # if first_flag:
-#         db.drop_all()
-        db.create_all()
-#         first_flag=False
-#     user1 = User(
-#         balance=100,
-#         username="testUser",
-#         commission_rate=10,
-#         # email="user@email.ru",
-#         # password_hash=123,
-#         webhook_url="http://localhosts",
-#     )  # Создание базы данных и таблиц
-#     # user1.set_password(password='123')
-#     tranz = Transaction(amount=100, commission=10, status="confirmed", user_id=1)
-#     tranz2 = Transaction(amount=100, commission=10, status="pending", user_id=1)
-#     db.session.add_all([user1, tranz,tranz2])
-        db.session.commit()
+    db.create_all()
+    db.session.commit()
 
 
-# app.cli.add_command(admin_commands)
 @app.cli.command("create-admin")
 @click.argument("admin")
-def create_user(admin):
-    """Создает дефолтного администратора."""
+def create_user(admin: str) -> None:
+    """
+    Создает дефолтного администратора.
+
+    :param admin: Имя администратора (строка).
+    :return: None
+    """
     db.drop_all()
     db.create_all()
-    user1 = User(
+
+    user = User(
         balance=100,
         username="testUser",
-        commission_rate=10,
-        # email="user@email.ru",
-        # password_hash=123,
-        webhook_url="http://localhosts",
+        commission_rate=0.01,
+        webhook_url="http://localhosts:5000/user/1",
     )  # Создание базы данных и таблиц
-
-    tranz = Transaction(amount=100, commission=10, status="confirmed", user_id=1)
-    tranz2 = Transaction(amount=100, commission=10, status="pending", user_id=1)
-    db.session.add_all([user1, tranz, tranz2])
     admin_user = User(username="admin")
-    db.session.add(admin_user)
+    transaction_test = Transaction(amount=100, commission=user.commission_rate * 100, status="confirmed", user_id=2)
+    transaction_test1 = Transaction(amount=200, commission=user.commission_rate * 200, status="pending", user_id=2)
+    transaction_test2 = Transaction(amount=300, commission=user.commission_rate * 300, status="canceled", user_id=2)
+    transaction_test3 = Transaction(amount=400, commission=user.commission_rate * 400, status="expired", user_id=2)
+
+    db.session.add_all([admin_user, user, transaction_test, transaction_test1, transaction_test2, transaction_test3])
+
     db.session.commit()
+    logger.info("Админ Создан")
 
 
 @app.route("/")
 def dashboard() -> str:
-    """Дашборд."""
+    """Dashboard с транзакциями. Транзакции отмененные или с истекшим сроком не считает
+
+    :return: HTML шаблон дашборда (строка).
+    """
     total_users = User.query.count()
     total_transactions = Transaction.query.count()
 
     today_transactions = Transaction.query.filter(
         Transaction.created_at >= datetime.now().date()
     ).all()
-    total_amount_today = sum(transaction.amount for transaction in today_transactions)
+
+    total_amount_today = sum(
+        transaction.amount
+        for transaction in today_transactions if transaction.status not in ['canceled', 'expired'])
 
     recent_transactions = (
         Transaction.query.order_by(Transaction.id.desc()).limit(5).all()
@@ -99,41 +89,69 @@ def dashboard() -> str:
 
 
 @app.route("/users", methods=["GET", "POST"])
-def users():
-    """Страница пользователей."""
+def users() -> Response | tuple[str, int] | str:
+    """Страница создания и получения пользователей.
+
+    :return: HTML шаблон страницы пользователей (строка).
+    """
     if request.method == "POST":
         username = request.form["username"]
         balance = request.form.get("balance")
         commission_rate = request.form.get("commission_rate")
+
         new_user = User(username=username)
+
         if balance:
-            new_user.balance = balance
+            new_user.balance = float(balance)
         if commission_rate:
-            new_user.commission_rate = commission_rate
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for("users"))
+            new_user.commission_rate = float(commission_rate)
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            logger.info("Создан пользователь")
+            new_user.webhook_url = f'http://localhost:5000/user/{new_user.id}'
+            db.session.commit()
+            return redirect(url_for("users"))
+        except IntegrityError:
+            logger.error("Ошибка добавления пользователя")
+            db.session.rollback()  # Откат транзакции в случае ошибки
+            error_message = "Пользователь с таким именем уже существует."
+            return render_template("error.html", error=error_message), 400
+
     user_list = User.query.all()
     return render_template("users.html", users=user_list)
 
 
 @app.route("/transactions", methods=["GET"])
-def transactions():
-    """Страница транзакций."""
+def transactions() -> str:
+    """Страница со всеми транзакциями.
+
+    :return: HTML шаблон страницы транзакций (строка).
+    """
     transaction_list = Transaction.query.all()
+
     return render_template("transactions.html", transactions=transaction_list)
 
 
-@app.route("/transactions/<int:transaction_id>", methods=["GET", "POST"])
-def transaction_detail(transaction_id):
-    """Детальный просмотр транзакции."""
+@app.route("/transactions/<int:transaction_id>", methods=["GET", "PUT", "POST"])
+def transaction_detail(transaction_id: int) -> str | Response:
+    """Детальный просмотр транзакции и обновление статуса транзакций.
+
+    :param transaction_id: ID транзакции (целое число).
+    :return: HTML шаблон детального просмотра транзакции (строка).
+    """
     transaction = Transaction.query.get_or_404(transaction_id)
 
-    if request.method == 'POST':
-        # status = request.form['status']
-        status='expired'
+    if request.method == 'PUT':
         if transaction.status == 'pending':
-            transaction.status = status
+            transaction.status = 'expired'
+            db.session.commit()
+            return redirect(url_for('transactions'))
+    elif request.method == 'POST':
+        new_status = request.form.get('status')
+
+        if new_status in ['confirmed', 'canceled']:
+            transaction.status = new_status
             db.session.commit()
             return redirect(url_for('transactions'))
 
@@ -141,17 +159,32 @@ def transaction_detail(transaction_id):
 
 
 @app.route("/create_transaction", methods=["POST"])
-def create_transaction():
-    """Создать транзакцию"""
+def create_transaction() -> tuple:
+    """Создать транзакцию.
+
+    :return: JSON ответ с ID созданной транзакции (кортеж).
+             Успех (201) или ошибка (400).
+    """
     data = request.json
-    if "amount" not in data:
-        return jsonify({"error": "Поле 'amount' обязательно для заполнения."}), 400
+
+    if ("amount" or "user_id") not in data:
+        return jsonify({"error": "Поле 'amount'/'user_id' обязательно для заполнения."}), 400
 
     amount = data["amount"]
-    user = data["user_id"]
-    transaction = Transaction(amount=amount, user_id=user)
+    user_id = data["user_id"]
+    check_user = db.session.get(User, user_id)
+    if check_user:
+        logger.info("Есть такой пользователь")
+        transaction = Transaction(amount=amount, user_id=user_id)
+    else:
+        logger.error("Нет такого пользователь")
+        error_message = "Пользователь с таким именем не  существует."
+        return render_template("error.html", error=error_message), 400
+
     # Расчет комиссии
     transaction.calculate_commission()
+    # transaction.commission = commission
+
     # Сохранение транзакции в базе данных
     db.session.add(transaction)
     db.session.commit()
@@ -160,8 +193,12 @@ def create_transaction():
 
 
 @app.route("/cancel_transaction", methods=["POST"])
-def cancel_transaction():
-    """Отмена транзакции по ID."""
+def cancel_transaction() -> tuple:
+    """Отмена транзакции по ID без HTML.
+
+    :return: JSON ответ с сообщением об отмене или ошибкой (кортеж).
+             Успех (200) или ошибка (400/404).
+    """
     data = request.json
 
     # Проверка наличия обязательного параметра id
@@ -171,9 +208,10 @@ def cancel_transaction():
     transaction_id = data["id"]
 
     # Получение транзакции из базы данных
-    transaction = db.session.get(Transaction, transaction_id)  # Updated line
+    transaction = db.session.get(Transaction, transaction_id)
 
     if not transaction:
+        logger.error("Попытка отменить несуществующую транзакцию")
         return jsonify({"error": "Транзакция не найдена."}), 404
 
     # Проверка статуса транзакции
@@ -186,14 +224,55 @@ def cancel_transaction():
             ),
             200,
         )
-
+    logger.error(f"Попытка отменить транзакцию со статусом {transaction.status} > id {transaction_id}")
     return jsonify({"error": "Невозможно отменить транзакцию с текущим статусом."}), 400
 
 
+@app.route("/confirm_transaction", methods=["POST"])
+def confirm_transaction() -> tuple:
+    """Подтвердить транзакции по ID без HTML.
+
+    :return: JSON ответ с сообщением о подтверждении или ошибкой (кортеж).
+             Успех (200) или ошибка (400/404).
+    """
+    data = request.json
+
+    # Проверка наличия обязательного параметра id
+    if "id" not in data:
+        return jsonify({"error": "Поле 'id' обязательно для заполнения."}), 400
+
+    transaction_id = data["id"]
+
+    # Получение транзакции из базы данных
+    transaction = db.session.get(Transaction, transaction_id)
+
+    if not transaction:
+        logger.error("Попытка отменить несуществующую транзакцию")
+        return jsonify({"error": "Транзакция не найдена."}), 404
+
+    # Проверка статуса транзакции
+    if transaction.status == "pending":
+        transaction.status = "confirmed"
+        db.session.commit()
+        return (
+            jsonify(
+                {"message": "Транзакция подтверждена.", "transaction_id": transaction.id}
+            ),
+            200,
+        )
+    logger.error(f"Попытка подтвердить транзакцию со статусом {transaction.status} > id {transaction_id}")
+    return jsonify({"error": "Невозможно подтвердить транзакцию с текущим статусом."}), 400
+
+
 @app.route("/check_transaction/<int:transaction_id>", methods=["GET"])
-def check_transaction(transaction_id):
-    """Проверка статуса транзакции по ID."""
-    transaction = db.session.get(Transaction, transaction_id)  # Updated line
+def check_transaction(transaction_id: int) -> tuple:
+    """Проверка статуса транзакции по ID без HTML.
+
+    :param transaction_id: ID транзакции (целое число).
+    :return: JSON ответ с информацией о транзакции или ошибкой (кортеж).
+             Успех (200) или ошибка (404).
+    """
+    transaction = db.session.get(Transaction, transaction_id)
 
     if not transaction:
         return jsonify({"error": "Транзакция не найдена."}), 404

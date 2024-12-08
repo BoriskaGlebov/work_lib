@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta
+
 import requests
 from celery import Celery
 from celery.schedules import crontab
 from flask import request
 
 from app import app
-from models import db,Transaction  # Import your database instance
+from models import Transaction, db  # Import your database instance
+
 # from models import Transaction  # Import your Transaction model
 
 periodic_app = Celery(
@@ -44,7 +46,7 @@ def check_pending_transactions():
                 "id": transaction.id,
                 "status": "expired"
             }
-            requests.post(webhook_url, json=payload)
+            requests.put(webhook_url, json=payload)
         return {"expired_tranzaction":len(expired_transactions)}
 
 periodic_app.conf.beat_schedule = {

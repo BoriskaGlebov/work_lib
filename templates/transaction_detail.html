@@ -29,15 +29,15 @@
         </tr>
     </table>
 
-    {% if transaction.status == 'Ожидание' %}
+    {% if transaction.status == 'pending' %}
     <h3>Изменить статус транзакции</h3>
     <form method="POST">
         <div class="form-group">
             <label for="status">Выберите новый статус:</label>
             <select name="status" id="status" class="form-control" required>
                 <option value="">Выберите статус</option>
-                <option value="Подтверждена">Подтверждена</option>
-                <option value="Отменена">Отменена</option>
+                <option value="confirmed">Подтверждена</option>
+                <option value="canceled">Отменена</option>
             </select>
         </div>
         <button type="submit" class="btn btn-primary">Обновить статус</button>
@@ -50,5 +50,6 @@
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 </body>
 </html>

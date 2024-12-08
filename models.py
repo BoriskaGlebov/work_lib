@@ -1,56 +1,74 @@
 from datetime import datetime
-
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import check_password_hash, generate_password_hash
 
 db = SQLAlchemy()
 
-
 class User(db.Model):
+    """Модель пользователя.
+
+    Attributes:
+        id (int): Уникальный идентификатор пользователя.
+        username (str): Уникальное имя пользователя.
+        balance (float): Баланс пользователя.
+        commission_rate (float): Процент комиссии для пользователя.
+        webhook_url (str): URL для получения уведомлений через вебхук.
+    """
     __tablename__ = "users"
 
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), nullable=False, unique=True)
-    # email = db.Column(db.String(254), nullable=False, unique=True)
-    # password_hash = db.Column(db.String(128), nullable=False)  # Хэш пароля?
-    balance = db.Column(db.Float, nullable=False, default=0.0)
-    commission_rate = db.Column(db.Float, nullable=False, default=0.05)
-    # role = db.Column(db.String(20), default='user')  # Add this line
-    webhook_url = db.Column(db.String(255), nullable=True)
+    id: int = db.Column(db.Integer, primary_key=True)
+    username: str = db.Column(db.String(20), nullable=False, unique=True)
+    balance: float = db.Column(db.Float, nullable=False, default=0.0)
+    commission_rate: float = db.Column(db.Float, nullable=False, default=0.05)
+    webhook_url: str = db.Column(db.String(255), nullable=True, default=f"http://localhost:5000/user/")
 
-    # def set_password(self, password):
-    #     self.password_hash = generate_password_hash(password)
+    def __repr__(self) -> str:
+        """Возвращает строковое представление объекта User.
 
-    # def check_password(self, password):
-    #     return check_password_hash(self.password_hash, password)
-
-    def __repr__(self):
+        :return: Строка с именем пользователя.
+        """
         return f"<User {self.username}>"
 
-
 class Transaction(db.Model):
+    """Модель транзакции.
+
+    Attributes:
+        id (int): Уникальный идентификатор транзакции.
+        created_at (datetime): Дата и время создания транзакции.
+        amount (float): Сумма транзакции.
+        commission (float): Комиссия за транзакцию.
+        status (str): Статус транзакции ('pending', 'confirmed', 'canceled', 'expired').
+        user_id (int): Идентификатор пользователя, связанного с транзакцией.
+        user (User): Связанный объект User.
+    """
     __tablename__ = "transactions"
 
-    id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.now)
-    amount = db.Column(db.Float, nullable=False)  # Сумма транзакции
-    commission = db.Column(db.Float, nullable=False)  # Комиссия за транзакцию
-    status = db.Column(
+    id: int = db.Column(db.Integer, primary_key=True)
+    created_at: datetime = db.Column(db.DateTime, default=datetime.now)
+    amount: float = db.Column(db.Float, nullable=False)  # Сумма транзакции
+    commission: float = db.Column(db.Float, nullable=False)  # Комиссия за транзакцию
+    status: str = db.Column(
         db.Enum("pending", "confirmed", "canceled", "expired"),
         nullable=False,
         default="pending",
     )  # Статус транзакции
 
-    user_id = db.Column(
+    user_id: int = db.Column(
         db.Integer, db.ForeignKey("users.id"), nullable=False
     )  # Связь с пользователем
     user = db.relationship("User", backref=db.backref("transactions", lazy=True))
 
-    def calculate_commission(self):
-        # Пример расчета комиссии (можно изменить по необходимости)
+    def calculate_commission(self) -> None:
+        """Вычисляет комиссию для транзакции на основе комиссии пользователя.
+
+        :return: None
+        """
         user = User.query.first()  # Предполагаем, что есть хотя бы один пользователь
         if user:
             self.commission = self.amount * user.commission_rate
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Возвращает строковое представление объекта Transaction.
+
+        :return: Строка с информацией о транзакции.
+        """
         return f"<Transaction {self.id}, Amount: {self.amount}, Commission: {self.commission}, Status: {self.status}>"
