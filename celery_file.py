@@ -11,8 +11,8 @@ from models import Transaction, db, User
 
 periodic_app = Celery(
     'tasks',
-    broker='redis://localhost:6379/0',
-    backend='redis://localhost:6379/0'
+    broker='redis://redis:6379/0',
+    backend='redis://redis:6379/0'
 )
 
 
@@ -53,7 +53,7 @@ def check_pending_transactions() -> dict:
             db.session.commit()
 
             # Отправляем уведомление по вебхуку
-            webhook_url: str = f'http://localhost:5000/transactions/{transaction.id}'
+            webhook_url: str = f'http://web:5000/transactions/{transaction.id}'
             payload: dict = {
                 "id": transaction.id,
                 "status": "expired"

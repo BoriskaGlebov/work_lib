@@ -15,8 +15,8 @@ from forms import LoginForm
 from models import Transaction, User, db
 
 app = Flask(__name__)
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_BROKER_URL'] = 'redis://redis:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://redis:6379/0'
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
@@ -217,7 +217,7 @@ def transactions() -> str:
 
 
 @app.route("/transactions/<int:transaction_id>", methods=["GET", "PUT", "POST"])
-@login_required
+# @login_required
 def transaction_detail(transaction_id: int) -> str | Response:
     """Детальный просмотр транзакции и обновление статуса транзакций.
 

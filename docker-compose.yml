@@ -6,18 +6,24 @@ services:
       TZ: Europe/Moscow
     ports:
       - "5000:5000"
+    volumes:
+      - sqlite_data:/app
 
   celery:
     build: .
     environment:
       TZ: Europe/Moscow
     command: celery -A celery_file.periodic_app worker --loglevel=info
+    volumes:
+      - sqlite_data:/app
 #
   celery-beat:
     build: .
     environment:
       TZ: Europe/Moscow
     command: celery -A celery_file.periodic_app beat --loglevel=info
+    volumes:
+      - sqlite_data:/app
 #
   flower:
     build: .
@@ -26,6 +32,8 @@ services:
     command: celery -A app.celery flower --port=5555
     ports:
       - "5555:5555"
+    volumes:
+      - sqlite_data:/app
 #
   redis:
     image: "redis:alpine"
@@ -33,3 +41,5 @@ services:
       TZ: Europe/Moscow
     ports:
       - "6379:6379"
+volumes:
+  sqlite_data:
