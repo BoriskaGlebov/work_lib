@@ -64,8 +64,8 @@ with open('name.txt', 'w', encoding='utf-8') as output_file:
     output_file.write("\nНижний колонтитул:\n")
     for paragraph in footer.paragraphs:
         output_file.write(format_text(paragraph.text) + '\n')
-if __name__ == '__main__':
-    print(os.path.exists('file123.docx'))
-    print(os.path.splitext('file123.docx')[0])
-    num=input("Введи номер")
-    print(os.path.splitext('file123.docx')[0]+'_'+num)
+# if __name__ == '__main__':
+#     print(os.path.exists('file123.docx'))
+#     print(os.path.splitext('file123.docx')[0])
+#     num=input("Введи номер")
+#     print(os.path.splitext('file123.docx')[0]+'_'+num)
