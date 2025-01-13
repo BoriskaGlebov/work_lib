@@ -26,4 +26,4 @@
 [репка с образами](https://disk.yandex.ru/d/mwNyjrgPqyo8oA)<br>
 [grafana](https://disk.yandex.ru/d/FeRgvtyFiNpXFw)
 
-
+[диск](https://disk.yandex.ru/d/VoXxJkqrTrCsOw) 
